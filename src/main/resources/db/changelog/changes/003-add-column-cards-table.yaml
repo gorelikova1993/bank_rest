@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-holder-name-to-cards
+      author: rockprogstar
+      changes:
+        - addColumn:
+            tableName: cards
+            columns:
+              - column:
+                  name: holder_name
+                  type: varchar(255)
+
+  - changeSet:
+      id: 004-fill-holder-name
+      author: rockprogstar
+      changes:
+        - update:
+            tableName: cards
+            columns:
+              - column:
+                  name: holder_name
+                  value: UNKNOWN
+
+  - changeSet:
+      id: 005-make-holder-name-not-null
+      author: rockprogstar
+      changes:
+          - addNotNullConstraint:
+              tableName: cards
+              columnName: holder_name
+              columnDataType: varchar(255)

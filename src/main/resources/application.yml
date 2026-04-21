@@ -1,5 +1,8 @@
   server:
     port: 8080
+    error:
+      include-message: always
+      include-binding-errors: always
 
   spring:
     datasource:
@@ -23,6 +26,8 @@
 
   logging:
     level:
+      root: INFO
+      com.example.bankcards: DEBUG
       org.springframework: INFO
       org.hibernate.SQL: DEBUG
       org.hibernate.type.descriptor.sql.BasicBinder: TRACE
@@ -34,5 +39,9 @@
       enabled: true
 
   jwt:
-    secret: verySecretKeyForJwtDontUseInProd
-    expiration: 3600000
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:3600000}
+
+  app:
+    encryption:
+      key: ${SECRET_KEY_FOR_CARD}

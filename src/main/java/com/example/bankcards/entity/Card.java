@@ -2,6 +2,7 @@ package com.example.bankcards.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -13,6 +14,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,6 +25,7 @@ import java.time.LocalDateTime;
 @Table(name = "cards")
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class Card {
     
     @Id
@@ -46,11 +50,18 @@ public class Card {
     @Column(name = "expiration_date", nullable = false)
     private LocalDate expirationDate;
     
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
     
     @Column(name = "last_four_digits", nullable = false, length = 4)
     private String lastFourDigits;
+    
+    @Column(name = "holder_name", nullable = false)
+    private String holderName;
+    
+    @Column(name = "card_hash", nullable = false, unique = true)
+    private String cardHash;
     
     public Card() {
     }

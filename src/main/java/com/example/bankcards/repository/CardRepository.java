@@ -23,4 +23,8 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     
     Optional<Card> findByIdAndOwnerId(Long id, Long ownerId);
     
+    Optional<Card> findByCardHash(String cardHash);
+    
+    boolean existsByCardHash(String cardHash);
+    
 }

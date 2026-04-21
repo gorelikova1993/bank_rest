@@ -9,14 +9,14 @@ import lombok.Setter;
 @Setter
 public class RegisterRequest {
     
-    @NotBlank
+    @NotBlank(message = "Логин не должен быть пустым")
     private String login;
     
-    @Email
-    @NotBlank
+    @Email(message = "Email должен быть валидным")
+    @NotBlank(message = "Email не должен быть пустым")
     private String email;
     
-    @NotBlank
+    @NotBlank(message = "Пароль не должен быть пустым")
     private String password;
     
     private String firstName;

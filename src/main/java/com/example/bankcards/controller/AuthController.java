@@ -33,8 +33,4 @@ public class AuthController {
         return userService.login(request);
     }
     
-    @GetMapping("/test")
-    public String test() {
-        return "secured";
-    }
 }

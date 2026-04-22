@@ -13,7 +13,6 @@ public class UserMapper {
         response.setEmail(user.getEmail());
         response.setFirstName(user.getFirstName());
         response.setLastName(user.getLastName());
-        response.setMiddleName(user.getMiddleName());
         response.setRole(user.getRole().name());
         response.setEnabled(user.isEnabled());
         return response;

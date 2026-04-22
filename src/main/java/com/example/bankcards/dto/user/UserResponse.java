@@ -1,5 +1,6 @@
 package com.example.bankcards.dto.user;
 
+import com.example.bankcards.entity.Role;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,6 +13,5 @@ public class UserResponse {
     private String role;
     private String firstName;
     private String lastName;
-    private String middleName;
     private boolean enabled;
 }

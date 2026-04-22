@@ -4,16 +4,21 @@ import com.example.bankcards.dto.auth.AuthResponse;
 import com.example.bankcards.dto.auth.LoginRequest;
 import com.example.bankcards.dto.auth.RegisterRequest;
 import com.example.bankcards.dto.user.UserResponse;
+import com.example.bankcards.dto.user.UserStatusUpdateRequest;
 import com.example.bankcards.entity.Role;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.InvalidCredentialsException;
 import com.example.bankcards.exception.UserAlreadyExistsException;
+import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.mapper.UserMapper;
 import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -68,5 +73,24 @@ public class UserService {
         return new AuthResponse(token);
     }
     
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        Page<User> users = userRepository.findAll(pageable);
+        
+        return users.map(userMapper::toResponse);
+    }
+    
+    public UserResponse getUserById(Long id) {
+        return userMapper.toResponse(userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("пользователь не найден")));
+    }
+    
+    @Transactional
+    public UserResponse updateStatus(Long id, UserStatusUpdateRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("пользователь не найден"));
+        
+        user.setEnabled(request.getEnabled());
+        return userMapper.toResponse(user);
+    }
 
 }

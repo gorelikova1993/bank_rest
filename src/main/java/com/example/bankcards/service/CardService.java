@@ -1,14 +1,16 @@
 package com.example.bankcards.service;
 
-import com.example.bankcards.dto.card.CardBlockRequest;
+import com.example.bankcards.dto.card.CardBalanceResponse;
 import com.example.bankcards.dto.card.CardCreateRequest;
 import com.example.bankcards.dto.card.CardResponse;
 import com.example.bankcards.dto.card.CardStatusUpdateRequest;
+import com.example.bankcards.dto.card.CardTransferRequest;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.CardGenerationException;
 import com.example.bankcards.exception.CardNotFoundException;
+import com.example.bankcards.exception.InvalidCardStatusException;
 import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.mapper.CardMapper;
 import com.example.bankcards.repository.CardRepository;
@@ -77,17 +79,14 @@ public class CardService {
         return cardMapper.toResponse(savedCard);
     }
     
-    public Page<CardResponse> getCardsByOwnerId(Long ownerId, Pageable pageable) {
-        User user = userRepository.findById(ownerId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-        
-        Page<Card> cards = cardRepository.findAllByOwnerId(user.getId(), pageable);
-        
-        return cards.map(cardMapper::toResponse);
-    }
-    
-    public Page<CardResponse> getAllCards(Pageable pageable) {
-        Page<Card> allCards = cardRepository.findAll(pageable);
+    public Page<CardResponse> getAllCards(CardStatus status, Pageable pageable) {
+        Page<Card> allCards;
+        if (status == null) {
+             allCards = cardRepository.findAll(pageable);
+        } else {
+            allCards = cardRepository.findAllByStatus(status, pageable);
+        }
+
         return allCards.map(cardMapper::toResponse);
     }
     
@@ -96,10 +95,14 @@ public class CardService {
                 .orElseThrow(() ->  new CardNotFoundException("Card is not found"));
     }
     
-    public Page<CardResponse> getMyCards(Pageable pageable) {
+    public Page<CardResponse> getMyCards(CardStatus status, Pageable pageable) {
         User user = getCurrentUser();
-        
-        Page<Card> cards = cardRepository.findAllByOwnerId(user.getId(), pageable);
+        Page<Card> cards;
+        if (status == null ) {
+            cards = cardRepository.findAllByOwnerId(user.getId(), pageable);
+        } else {
+            cards = cardRepository.findAllByOwnerIdAndStatus(user.getId(), status, pageable);
+        }
         
         return cards.map(cardMapper::toResponse);
     }
@@ -128,4 +131,55 @@ public class CardService {
         return userRepository.findByLogin(login)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
     }
+    
+    public CardBalanceResponse getMyCardBalance(Long id) {
+        User user = getCurrentUser();
+        Card card = cardRepository.findByIdAndOwnerId(id, user.getId())
+                .orElseThrow(() -> new CardNotFoundException("Card not found"));
+        
+        return new CardBalanceResponse(card.getId(), card.getBalance());
+    }
+    
+    @Transactional
+    public CardResponse blockCard(Long id) {
+        User user = getCurrentUser();
+        Card card = cardRepository.findByIdAndOwnerId(id, user.getId())
+                .orElseThrow(() -> new CardNotFoundException("Card not found"));
+        if (card.getStatus() == CardStatus.BLOCK_REQUESTED || card.getStatus() == CardStatus.BLOCKED) {
+            throw new InvalidCardStatusException("Card is already blocked");
+        }
+        if (card.getStatus() == CardStatus.EXPIRED) {
+            throw new IllegalStateException("Expired card cannot be blocked");
+        }
+        card.setStatus(CardStatus.BLOCK_REQUESTED);
+        return cardMapper.toResponse(card);
+    }
+    
+    @Transactional
+    public void transferBetweenOwnCards(CardTransferRequest request) {
+        User user = getCurrentUser();
+        
+        if (request.getFromCardId().equals(request.getToCardId())) {
+            throw new IllegalArgumentException("Source and destination cards must be different");
+        }
+        
+        Card fromCard = cardRepository.findByIdAndOwnerId(request.getFromCardId(), user.getId())
+                .orElseThrow(() ->  new CardNotFoundException("Source card not found"));
+        
+        Card toCard = cardRepository.findByIdAndOwnerId(request.getToCardId(), user.getId())
+                .orElseThrow(() ->  new CardNotFoundException("Destination card not found"));
+        
+        if (fromCard.getStatus() != CardStatus.ACTIVE || toCard.getStatus() != CardStatus.ACTIVE) {
+            throw  new IllegalStateException("Only active cards can participate in transfers");
+        }
+        
+        if (fromCard.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new IllegalStateException("Insufficient funds");
+        }
+        
+        fromCard.setBalance(fromCard.getBalance().subtract(request.getAmount()));
+        toCard.setBalance(toCard.getBalance().add(request.getAmount()));
+        
+    }
+    
 }

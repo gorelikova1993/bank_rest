@@ -30,7 +30,7 @@ REST API для управления банковскими картами и п
 - для проверки уникальности номера карты используется `card_hash`
 
 ## Стек
-- Java 21
+- Java 17
 - Spring Boot 3
 - Spring Security
 - JWT
